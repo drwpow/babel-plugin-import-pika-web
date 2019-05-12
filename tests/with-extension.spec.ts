@@ -5,7 +5,7 @@ describe('withExtension', () => {
     expect(withExtension('module')).toBe('module.js');
   });
 
-  it('appends extensions, even if it’s already present', () => {
-    expect(withExtension('highlight.js')).toBe('highlight.js.js');
+  it('skips adding an extension to one already present', () => {
+    expect(withExtension('highlight.js')).toBe('highlight.js');
   });
 });

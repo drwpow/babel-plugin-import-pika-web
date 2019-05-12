@@ -1,5 +1,8 @@
+import { extname } from 'path';
+
 function withExtension(filename: string): string {
-  return `${filename}.js`;
+  const ext = extname(filename);
+  return ext.length ? filename : `${filename}.js`;
 }
 
 export default withExtension;

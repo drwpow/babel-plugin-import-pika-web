@@ -2,6 +2,7 @@ import { resolve } from 'path';
 import { ConfigAPI } from '@babel/core';
 import { declare } from '@babel/helper-plugin-utils';
 import { importDeclaration, stringLiteral } from '@babel/types';
+import shouldSkip from './lib/should-skip';
 import transformImport from './lib/transform-import';
 import withExtension from './lib/with-extension';
 
@@ -33,37 +34,37 @@ export default declare((api: ConfigAPI, opts?: BabelPluginImportPikaWeb.Options)
 
   // Options
   const dir = (opts && opts.dir) || 'web_modules';
-  const addJS = (opts && !!opts.addJS) || true;
   const ignore = (opts && opts.ignore) || [];
 
   return {
     visitor: {
       ImportDeclaration(path: ImportPath, state: ImportState) {
-        let moduleName = path.node.source.value;
+        let token = path.node.source.value;
 
-        // Ignore if in ignore array
-        if (ignore.includes(moduleName)) {
+        // Skip if this module is relative and has extension
+        if (shouldSkip(token)) {
           return;
         }
 
-        let token = moduleName;
-
-        // If adding extension
-        if (addJS) {
-          token = withExtension(token);
+        // Ignore if in ignore array
+        if (ignore.includes(token)) {
+          return;
         }
 
-        // If import is absolute
-        if (token[0] !== '.') {
+        // If extension missing, add `.js`
+        let resolvedImport = withExtension(token);
+
+        // If import is absolute, convert to relative
+        if (resolvedImport[0] !== '.') {
           const { filename, cwd } = state.file.opts;
-          token = transformImport({
+          resolvedImport = transformImport({
             filename,
-            moduleName: token,
+            moduleName: resolvedImport,
             webModulesDir: resolve(cwd, dir),
           });
         }
 
-        path.replaceWith(importDeclaration(path.node.specifiers, stringLiteral(token)));
+        path.replaceWith(importDeclaration(path.node.specifiers, stringLiteral(resolvedImport)));
       },
     },
     post() {},
