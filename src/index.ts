@@ -4,7 +4,6 @@ import { declare } from '@babel/helper-plugin-utils';
 import { importDeclaration, stringLiteral } from '@babel/types';
 import shouldSkip from './lib/should-skip';
 import transformImport from './lib/transform-import';
-import withExtension from './lib/with-extension';
 
 interface ImportPath {
   replaceWith(node: any): void;
@@ -46,24 +45,18 @@ export default declare((api: ConfigAPI, opts?: BabelPluginImportPikaWeb.Options)
           return;
         }
 
-        // Ignore if in ignore array
+        // Skip if in ignore array
         if (ignore.includes(token)) {
+          console.info(`Ignoring ${token}`);
           return;
         }
 
-        // If extension missing, add `.js`
-        let resolvedImport = withExtension(token);
-
-        // If import is absolute, convert to relative
-        if (resolvedImport[0] !== '.') {
-          const { filename, cwd } = state.file.opts;
-          resolvedImport = transformImport({
-            filename,
-            moduleName: resolvedImport,
-            webModulesDir: resolve(cwd, dir),
-          });
-        }
-
+        const { filename, cwd } = state.file.opts;
+        const resolvedImport = transformImport({
+          filename,
+          moduleName: token,
+          webModulesDir: resolve(cwd, dir),
+        });
         path.replaceWith(importDeclaration(path.node.specifiers, stringLiteral(resolvedImport)));
       },
     },
