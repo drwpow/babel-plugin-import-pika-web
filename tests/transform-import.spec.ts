@@ -1,22 +1,37 @@
 import transformImport, { forwardSlash } from '../src/lib/transform-import';
 
+beforeAll(() => {
+  const mockResolve = () => `/user/test/code/my-module/index.js`;
+  mockResolve.paths = () => [];
+  require.resolve = mockResolve;
+});
+
 describe('transformImport method', () => {
-  it('works for the same root', () => {
+  it('appends .js to relative modules if it can’t resolve', () => {
+    const params = {
+      filename: '/user/test/code/app.js',
+      moduleName: './my-module',
+      webModulesDir: '',
+    };
+    expect(transformImport(params)).toBe('./my-module.js');
+  });
+
+  it('transforms absolute modules for root folder', () => {
     const params = {
       filename: '/user/test/code/app.js',
       moduleName: 'vue',
       webModulesDir: '/user/test/code/web_modules',
     };
-    expect(transformImport(params)).toBe('./web_modules/vue');
+    expect(transformImport(params)).toBe('./web_modules/vue.js');
   });
 
-  it('works for parent roots', () => {
+  it('transfroms relative modules for nested folders', () => {
     const params = {
       filename: '/user/test/code/components/button.js',
       moduleName: 'vue',
       webModulesDir: '/user/test/code/web_modules',
     };
-    expect(transformImport(params)).toBe('../web_modules/vue');
+    expect(transformImport(params)).toBe('../web_modules/vue.js');
   });
 });
 
